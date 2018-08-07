@@ -25,18 +25,50 @@ class TimersDashboard extends React.Component{
     this.createTimer(timer);
   };
 
+  handleEditFormSubmit = (attrs) => {
+    this.updateTimer(attrs);
+  };
+
+  handleDeleteTimerSubmit= (timerId) => {
+    this.deleteTimer(timerId);
+  };
+
   createTimer = (timer) => {
     const t = helpers.newTimer(timer);
     this.setState({
       timers: this.state.timers.concat(t)
     });
   };
+
+  updateTimer = (attrs) => {
+    this.setState({
+      timers: this.state.timers.map((timer) =>{
+        if(timer.id === attrs.id){
+          return Object.assign({}, timer, {
+            title: attrs.title,
+            project: attrs.project,
+          });
+        } else {
+          return timer;
+        }
+      }),
+    });
+  };
+
+  deleteTimer = (timerId) => {
+    this.setState({
+      timers: this.state.timers.filter( t => t.id !== timerId),
+    });
+  };
+
   render() {
     return (
       <div className='ui three column centered grid'>
         <div className='column'>
           <EditableTimerList
             timers={this.state.timers}
+            onFormSubmit={this.handleEditFormSubmit}
+            onDeleteClick={this.handleDeleteTimerSubmit}
           />
           <ToggleableTimerForm
             onFormSubmit={this.handleCreateFormSubmit}
@@ -61,6 +93,10 @@ class ToggleableTimerForm extends React.Component {
     this.props.onFormSubmit(timer);
     this.setState({ isOpen: false });
   };
+  handleDeleteClick = (timer) => {
+    this.props.onDeleteClick(timer);
+  }
+
   render() {
     if(this.state.isOpen){
       return(
@@ -94,6 +130,9 @@ class EditableTimerList extends React.Component {
         project={timer.project}
         elapsed={timer.elapsed}
         runningSince={timer.runningSince}
+        onFormSubmit={this.props.onFormSubmit}
+        //onDeleteClick={this.props.onDeleteSubmit}
+        onDeleteClick={this.props.onDeleteClick}
       />
     ));
     return (
@@ -108,6 +147,37 @@ class EditableTimer extends React.Component {
   state = {
     editFormOpen: false,
   };
+  handleEditClick = () => {
+    this.openForm();
+  };
+
+  // handleDeleteClick = (timer) => {
+  //  if (window.confirm('Are you sure you wish to delete this item?')) {
+  //    this.handleDeleteTimerSubmit(timer);
+  //  }
+  // };
+
+  handleFormClose = () => {
+    this.closeForm();
+  };
+
+  handleSubmit = (timer) => {
+    this.props.onFormSubmit(timer);
+    this.closeForm();
+  }
+
+  closeForm = () => {
+    this.setState({ editFormOpen: false });
+  };
+
+  openForm = () => {
+    this.setState({ editFormOpen: true });
+  };
+
+  // handleDeleteTimerSubmit = (timer) => {
+  //   this.props.onDeleteSubmit(timer);
+  // };
+
   render() {
     if(this.state.editFormOpen) {
       return (
@@ -115,6 +185,8 @@ class EditableTimer extends React.Component {
           id={this.props.id}
           title={this.props.title}
           project={this.props.project}
+          onFormSubmit={this.handleSubmit}
+          onFormClose={this.handleFormClose}
         />
       );
     } else {
@@ -125,6 +197,9 @@ class EditableTimer extends React.Component {
           project={this.props.project}
           elapsed={this.props.elapsed}
           runningSince={this.props.runningSince}
+          onEditClick={this.handleEditClick}
+          //onDeleteClick={thishandleDeleteClick}
+          onDeleteClick={this.props.onDeleteClick}
         />
       );
     }
@@ -132,6 +207,13 @@ class EditableTimer extends React.Component {
 }
 
 class Timer extends React.Component {
+handleDeleteClick = () => {
+  if (window.confirm('Are you sure you wish to delete this item?')){
+    this.props.onDeleteClick(this.props.id);
+  };
+};
+// I did have this ^^^^ here...
+
   render() {
     const elapsedString = helpers.renderElapsedString(this.props.elapsed);
     return(
@@ -149,10 +231,17 @@ class Timer extends React.Component {
             </h2>
           </div>
           <div className='extra content'>
-            <span className='right floated edit icon'>
+            <span
+              className='right floated edit icon'
+              onClick={this.props.onEditClick}
+              >
               <i className='edit icon' />
             </span>
-            <span className='right floated trash icon'>
+            <span
+              className='right floated trash icon'
+              //onClick={this.props.onDeleteClick}
+              onClick={this.handleDeleteClick}
+              >
               <i className='trash icon' />
             </span>
           </div>
